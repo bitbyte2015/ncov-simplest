@@ -1,20 +1,22 @@
+CLADE = "21L"
+
 rule build:
     input:
-        "auspice/ncov_21K-diversity.json",
-        "auspice/ncov_21K-diversity_unmasked.json"
+        expand("auspice/ncov_{clade}-diversity.json", clade=CLADE),
+        expand("auspice/ncov_{clade}-diversity_unmasked.json", clade=CLADE)
 
 rule build_all:
     input:
-        "auspice/ncov_21K-all-diversity.json",
+        expand("auspice/ncov_{clade}-all-diversity.json", clade=CLADE)
 
 rule deploy:
     input:
-        "deploy/21K/latest.json",
-        "deploy/21K/latest_unmasked.json",
+        expand("deploy/{clade}/latest.json", clade=CLADE),
+        expand("deploy/{clade}/latest_unmasked.json", clade=CLADE)
 
 rule deploy_all:
     input:
-        "deploy/21K-all/latest.json",
+        expand("deploy/{clade}-all/latest.json", clade=CLADE)
 
 def input_for_do_stuff(wildcards):
     try:
