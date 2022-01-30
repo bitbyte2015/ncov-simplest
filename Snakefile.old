@@ -2,12 +2,12 @@ CLADE = "21L"
 
 rule build:
     input:
-        expand("auspice/{clade}_diversity.json", clade=CLADE),
-        expand("auspice/{clade}_diversity_unmasked.json", clade=CLADE)
+        expand("auspice/ncov_{clade}-diversity.json", clade=CLADE),
+        expand("auspice/ncov_{clade}-diversity_unmasked.json", clade=CLADE)
 
 rule build_all:
     input:
-        expand("auspice/{clade}_all-diversity.json", clade=CLADE)
+        expand("auspice/ncov_{clade}-all-diversity.json", clade=CLADE)
 
 rule deploy:
     input:
@@ -27,8 +27,8 @@ def input_for_do_stuff(wildcards):
 rule unpack_gisaid_tar:
     input: input_for_do_stuff 
     output:
-        sequences = "data/{build}/gisaid.fasta",
-        metadata = "data/{build}/metadata_omicron.tsv",
+        sequences = "data/gisaid.fasta",
+        metadata = "data/metadata_omicron.tsv",
     shell:
         """
         tar -xvf {input} -C data/unpacked
@@ -57,9 +57,9 @@ genes = [
 
 rule exclude_outliers:
     input:
-        sequences = "data/{build}/gisaid.fasta",
-        metadata = "data/{build}/metadata_omicron.tsv",
-        exclude = "data/{build}/exclude_sites.txt",
+        sequences = "data/gisaid.fasta",
+        metadata = "data/metadata_omicron.tsv",
+        exclude = "data/exclude_sites.txt",
     output:
         sampled_sequences = "data/{build}/filtered.fasta",
     shell:
@@ -83,17 +83,17 @@ rule join_ref_fasta:
 rule join_ref_meta:
     input:
         reference = "data/root_meta.tsv",
-        omicron = "data/{build}/metadata_omicron.tsv",
+        omicron = "data/metadata_omicron.tsv",
     output:
-        "data/{build}/metadata_raw.tsv",
+        "data/metadata_raw.tsv",
     shell:
         "cat {input.omicron} {input.reference} > {output}"
 
 rule remove_false_meta_linebreaks:
     input:
-        "data/{build}/metadata_raw.tsv",
+        "data/metadata_raw.tsv",
     output:
-        "data/{build}/metadata.tsv",
+        "data/metadata.tsv",
     run:
         import re
         with open(input[0], "r") as f:
@@ -140,7 +140,7 @@ rule mask:
             --mask-from-beginning 100 \
             --mask-from-end 200 \
             --mask-terminal-gaps \
-            --mask-site-file data/{wildcards.build}/exclude_sites_light.txt \
+            --mask-site-file data/exclude_sites_light.txt \
             --output {output.alignment}
         """
 
@@ -169,7 +169,7 @@ rule tree:
     params:
         args = "'-ninit 10 -n 4 -czb -T AUTO -ntmax 10'",
         # exclude_sites = "data/exclude_sites.txt"
-        exclude_sites = expand("data/{build}/exclude_none.txt", build=CLADE)
+        exclude_sites = "data/exclude_none.txt"
     shell:
         """
         augur tree \
@@ -183,7 +183,7 @@ rule refine:
     input:
         tree = rules.tree.output.tree,
         alignment = rules.mask.output.alignment,
-        metadata = "data/{build}/metadata.tsv",
+        metadata = "data/metadata.tsv",
     output:
         tree = "builds/{build}/tree.nwk",
         node_data = "builds/{build}/branch_lengths.json"
@@ -288,7 +288,7 @@ rule translate_unmasked:
 
 rule recency:
     input:
-        metadata= "data/{build}/metadata.tsv",
+        metadata= "data/metadata.tsv",
     output:
         node_data = "builds/{build}/recency.json",
     shell:
@@ -317,9 +317,9 @@ rule export:
         ancestral = "builds/{build}/nt_muts{masking}",
         translate = "builds/{build}/aa_muts{masking}",
         auspice_config = "data/auspice_config.json",
-        metadata = "data/{build}/metadata.tsv",
+        metadata = "data/metadata.tsv",
     output:
-        auspice_json = "auspice/{build}_diversity{masking}",
+        auspice_json = "auspice/ncov_{build}-diversity{masking}",
     shell:
         """
         export AUGUR_RECURSION_LIMIT=10000;
